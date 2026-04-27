@@ -1,0 +1,17 @@
+<svg width="860" height="120" viewBox="0 0 860 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#B9B7B7">
+    <rect x="8" y="52" width="34" height="34" transform="rotate(45 8 52)"/>
+    <rect x="62" y="25" width="34" height="34" transform="rotate(45 62 25)"/>
+    <rect x="115" y="0" width="34" height="34" transform="rotate(45 115 0)"/>
+    <rect x="115" y="52" width="34" height="34" transform="rotate(45 115 52)"/>
+    <rect x="115" y="104" width="34" height="34" transform="rotate(45 115 104)"/>
+    <rect x="62" y="79" width="34" height="34" transform="rotate(45 62 79)"/>
+    <rect x="168" y="25" width="34" height="34" transform="rotate(45 168 25)"/>
+    <rect x="168" y="79" width="34" height="34" transform="rotate(45 168 79)"/>
+  </g>
+  <circle cx="248" cy="60" r="46" fill="#184B9F"/>
+  <rect x="248" y="35" width="36" height="36" transform="rotate(45 248 35)" fill="white"/>
+  <text x="312" y="86" fill="#184B9F" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="88" letter-spacing="6">RBI</text>
+  <path d="M710 25L760 45L744 87H720C700 87 684 71 684 51C684 43 686 35 690 28L710 25Z" fill="#184B9F"/>
+  <path d="M728 55H770C793 55 812 74 812 97V108H742C719 108 700 89 700 66V55H728Z" fill="#184B9F"/>
+</svg>
