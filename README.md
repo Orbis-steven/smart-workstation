@@ -1,5 +1,8 @@
 # Smart Workstation Frontend Skill Guide
 
+- Chinese version: `README.zh-CN.md`
+- 中文版：`README.zh-CN.md`
+
 ## 1. Project Purpose
 
 This project is a `React + Vite` frontend for the smart workstation.
