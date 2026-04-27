@@ -1,0 +1,7 @@
+interface:
+  display_name: "ORBCAFE Pad Workflow"
+  short_description: "Implement touch-first tablet UI with Pad components and hooks"
+  default_prompt: "Use $orbcafe-pad-workflow to implement this tablet touch workflow with ORBCAFE Pad components."
+
+policy:
+  allow_implicit_invocation: false

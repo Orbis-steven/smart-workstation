@@ -1,0 +1,7 @@
+interface:
+  display_name: "Modula Interface"
+  short_description: "Build Modula REST gateway and simulator workflows"
+  default_prompt: "Use $modula-interface to implement or debug Modula REST APIs, bay orchestration, or live versus simulator behavior."
+
+policy:
+  allow_implicit_invocation: false

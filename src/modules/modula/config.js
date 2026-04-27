@@ -1,0 +1,7 @@
+export const MODULA_MACHINE_NO = 1;
+export const MODULA_LEVEL_COUNT = 90;
+export const MODULA_GRID_COLUMNS = 17;
+export const MODULA_GRID_ROWS = 2;
+export const MODULA_BINS_PER_TRAY = MODULA_GRID_COLUMNS * MODULA_GRID_ROWS;
+export const MODULA_MAX_ACTIVE_TRAYS = 2;
+export const MODULA_SUPPORTS_LIGHT_CONTROL = false;
