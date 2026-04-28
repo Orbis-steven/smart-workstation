@@ -461,20 +461,262 @@ const command = parseVoiceCommand('帮我查一下今天有哪些出库任务')
 
 这意味着旧代码里的导入路径仍可工作，但新代码应优先使用 `src/modules/...`。
 
-## 11. 本地启动
+## 11. 部署与启动说明
+
+### 11.1 组件部署顺序
+
+建议按以下顺序启动：
+
+1. 本仓库中的前端应用
+2. 配套视觉后端服务
+3. 可选的 SAP 接口实现
+4. 可选的 Modula 接口实现
+5. 可选的 AI 协作层 `AGENTS.md` 与 `skills/`
+
+### 11.2 组件矩阵
+
+| 组件 | 代码位置 | Demo 是否必需 | 启动命令 | 默认端口 / 地址 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| 前端应用 | 本仓库，主要是 `src/` | 是 | `npm run dev` | `http://localhost:8108` | 当前 Git 仓库实际提交和版本管理的是这一部分 |
+| 视觉后端 | 外部 FastAPI 配套服务，前端通过 `src/modules/workstation/api.js` 调用 | 视觉、扫码绑定、取料校验时必需 | `uvicorn main:app --host 127.0.0.1 --port 8100 --reload` | `http://127.0.0.1:8100` | 后端代码当前不在本仓库中版本管理 |
+| SAP 接口层 | `src/modules/sap/sapGateway.js` | 否，mock 模式可独立运行 | 项目自定义 | 项目自定义 | SAP 接口上线后替换预留方法 |
+| Modula 接口层 | `src/modules/modula/deviceGateway.js` | 否，mock 队列可独立运行 | 项目自定义 | 项目自定义 | 当前前端不再控制 Modula 灯光 |
+| AI 协作层 | `AGENTS.md`、`skills/` | 否 | 无运行进程 | 无 | 方便 Codex 或其他 AI 工具快速理解仓库结构 |
+
+### 11.3 功能依赖矩阵
+
+| 功能 | 仅前端可跑 | 需要视觉后端 | 需要 SAP 接口 | 需要 Modula 接口 | 浏览器 / 硬件要求 |
+| --- | --- | --- | --- | --- | --- |
+| 任务查询列表 | mock 模式下可以 | 否 | 正式模式需要 | 否 | 现代浏览器 |
+| 托盘库存查询 | mock 模式下可以 | 否 | 正式模式需要 | 否 | 现代浏览器 |
+| 物料库位查询 / 转移 | mock 模式下可以 | 否 | 正式模式需要 | 否 | 现代浏览器 |
+| 语音小助手 | 可以 | 否 | 取决于查询数据来源 | 否 | 浏览器支持语音识别和语音播报 |
+| 视觉工作站入库 / 出库 | 不可以 | 需要 | 后续可选同步任务状态 | 后续可选同步托盘状态 | 后端机器需要接摄像头 |
+| Modula 托盘队列调度 | 当前 mock 流程可跑 | 否 | 可选 | 正式模式需要 | 现代浏览器 |
+
+### 11.4 运行环境要求
+
+| 依赖项 | 在项目中的作用 | 说明 |
+| --- | --- | --- |
+| `Git` | clone / pull / push 仓库 | 团队协作和部署必需 |
+| `Node.js` + `npm` | 运行前端 | `package.json` 没有限定 engine，建议使用兼容当前 Vite / React 工具链的 LTS 版本 |
+| `Python 3` | 运行视觉后端 | 只有视觉工作站场景需要 |
+| 现代浏览器 | 运行前端 UI | 语音助手推荐 Chrome 或 Edge |
+| 后端机器摄像头 | 视觉工作站识别 | 摄像头由后端读取，前端只显示视频流 |
+| 音频输出设备 | 播放语音助手反馈 | 可选，但建议具备 |
+
+### 11.5 前端 NPM 依赖清单
+
+精确版本以 `package.json` 为准。
+
+运行时依赖：
+
+| 包名 | 版本 | 用途 |
+| --- | --- | --- |
+| `react` | `^19.2.4` | UI 运行时 |
+| `react-dom` | `^19.2.4` | DOM 渲染 |
+| `react-router-dom` | `^7.13.2` | 页面路由 |
+| `axios` | `^1.14.0` | HTTP 请求 |
+| `orbcafe-ui` | `^1.2.1` | 表格和消息弹框组件 |
+| `@mui/material` | `^7.3.9` | ORBCAFE 依赖的基础 UI 组件 |
+| `@mui/icons-material` | `^7.3.9` | ORBCAFE 依赖的图标包 |
+| `@mui/x-date-pickers` | `^8.27.2` | 日期筛选组件 |
+| `@emotion/react` | `^11.14.0` | MUI 样式运行时 |
+| `@emotion/styled` | `^11.14.1` | MUI 样式运行时 |
+| `dayjs` | `^1.11.20` | 日期处理 |
+| `lucide-react` | `^1.7.0` | 图标库 |
+| `tailwindcss` | `^4.2.2` | 样式系统 |
+| `@tailwindcss/vite` | `^4.2.2` | Tailwind 与 Vite 集成 |
+
+开发依赖：
+
+| 包名 | 版本 | 用途 |
+| --- | --- | --- |
+| `vite` | `^8.0.1` | 开发服务器与构建 |
+| `@vitejs/plugin-react` | `^6.0.1` | React 的 Vite 插件 |
+| `eslint` | `^9.39.4` | 代码检查 |
+| `@eslint/js` | `^9.39.4` | ESLint 配置辅助 |
+| `eslint-plugin-react-hooks` | `^7.0.1` | React Hooks 检查 |
+| `eslint-plugin-react-refresh` | `^0.5.2` | React Refresh 检查 |
+| `globals` | `^17.4.0` | ESLint 全局变量定义 |
+| `@types/react` | `^19.2.14` | 编辑器 / 工具类型支持 |
+| `@types/react-dom` | `^19.2.3` | 编辑器 / 工具类型支持 |
+
+### 11.6 配套视觉后端 Python 依赖
+
+虽然视觉后端代码当前不在本仓库中，但当前前端联调依赖的配套后端 Python 依赖为：
+
+| 包名 | 来源 | 用途 |
+| --- | --- | --- |
+| `fastapi` | 配套后端 `requirements.txt` | REST API |
+| `uvicorn` | 配套后端 `requirements.txt` | ASGI 服务启动 |
+| `opencv-python-headless` | 配套后端 `requirements.txt` | 摄像头取流与图像差分 |
+| `numpy` | 配套后端 `requirements.txt` | 图像 / 网格计算 |
+| `sqlalchemy` | 配套后端 `requirements.txt` | 本地库存持久化 |
+| `pydantic` | 配套后端 `requirements.txt` | 请求 / 响应模型 |
+
+当前前端所依赖的视觉后端接口包括：
+
+- `GET /state`
+- `GET /video_feed`
+- `POST /event/vision_session`
+- `POST /event/mode`
+- `POST /event/scan`
+- `POST /event/pick`
+- `POST /event/sensor_in`
+- `POST /event/sensor_out`
+- `POST /event/reset`
+- `GET /item-location`
+- `POST /item-location`
+
+### 11.7 前端部署步骤
+
+1. clone 仓库。
+2. 进入仓库根目录。
+3. 安装前端依赖。
+4. 检查 `src/config/api.js` 中的工作站后端地址和数据提供者。
+5. 启动开发模式，或者构建生产包。
 
 ```powershell
+git clone <your-repository-url>
+cd smart-workstation
 npm install
 npm run dev
 ```
 
-默认前端地址：
+生产构建命令：
 
-- `http://localhost:8108`
+```powershell
+npm run build
+npm run preview
+```
 
-视觉后端预期地址：
+当前前端默认运行参数：
 
-- `http://127.0.0.1:8100`
+- 前端开发地址：`http://localhost:8108`
+- 工作站后端地址：`http://127.0.0.1:8100`
+- 数据提供者：`mock`
+
+重要配置规则：
+
+- 当前仓库 **没有** `.env` 自动加载逻辑
+- 如果视觉后端端口或地址变化，先修改 `src/config/api.js`
+- 如果页面里展示给用户的端口提示也要变，还要同步修改：
+  - `src/modules/workstation/api.js`
+  - `src/i18n/workstationDict.js`
+  - `README.md`
+  - `README.zh-CN.md`
+
+### 11.8 配套视觉后端部署步骤
+
+本仓库不包含视觉后端运行时代码，因此必须额外准备一个配套视觉后端工程或部署包。
+
+建议的配套后端启动流程：
+
+1. 准备后端项目目录。
+2. 根据它自己的 `requirements.txt` 安装 Python 依赖。
+3. 如摄像头不是默认设备 `0`，可先设置系统环境变量 `CAMERA_SOURCE`。
+4. 在 `8100` 端口启动 FastAPI。
+5. 验证前端能访问 `/state` 和 `/video_feed`。
+
+示例启动命令：
+
+```powershell
+cd <vision-backend-directory>
+pip install -r requirements.txt
+uvicorn main:app --host 127.0.0.1 --port 8100 --reload
+```
+
+重要说明：
+
+- 当前后端联调是代码配置方式，不是 `.env` 配置方式
+- 前端首屏不能自动查询数据
+- 二级视觉工作站页面只有在视频流和事件接口都可用时才能正常工作
+
+### 11.9 SAP 接口部署步骤
+
+当前默认模式是本地 mock 模式。
+
+如果保持 mock 模式：
+
+- `src/config/api.js` 中保留 `INVENTORY_DATA_PROVIDER = 'mock'`
+- 继续使用：
+  - `src/modules/sap/mock/sapOrders.js`
+  - `src/modules/sap/mock/itemLocationMapping.js`
+  - `src/modules/sap/mock/trayInventorySnapshot.js`
+
+如果接入真实 SAP：
+
+1. 实现 `src/modules/sap/sapGateway.js` 中的预留方法。
+2. 保持查询编排逻辑在 `src/modules/sap/sapTaskService.js` 和 `src/modules/sap/sapUpdateService.js`。
+3. 保持“托盘库存查询”和 “TO 任务列表”分离。
+4. 保持库存查询显示“实际库存数量”，而不是“需求数量”。
+
+需要实现的 SAP 预留方法：
+
+- `queryOpenTasksFromSap()`
+- `queryTrayBinsFromSap()`
+- `queryBinMaterialsFromSap()`
+- `queryMaterialLocationFromSap()`
+- `updateMaterialLocationInSap()`
+- `updateTaskStatusInSap()`
+
+### 11.10 Modula 接口部署步骤
+
+当前默认模式是前端侧队列模拟与业务编排。
+
+如果接入真实 Modula：
+
+1. 实现：
+   - `requestTrayOpen()`
+   - `requestTrayReturn()`
+   - `readTrayStatus()`
+2. 保持托盘命名规则 `机器号 + 层数`
+3. 保持当前托盘范围 `1001` 到 `1090`
+4. 保持队列调度逻辑集中在 `src/modules/modula/queueService.js`
+5. **不要** 把灯光控制重新加回前端
+
+当前的重要队列规则：
+
+- 前端用户只按顺序完成托盘任务
+- “最多 2 个托盘同时工作”是给 Modula 编排层的限制，不是给前端用户的操作限制
+
+### 11.11 部署后验收清单
+
+启动完成后，至少检查：
+
+1. 首次打开页面不能自动查询数据。
+2. 点击 `GO` 后才触发查询。
+3. 托盘库存查询显示的是实际库存，不是需求数量。
+4. 物料库位查询支持库位转移弹窗流程。
+5. 语音助手在 `zh`、`en`、`de` 下都能继续工作。
+6. 若视觉后端已启动，二级工作站页面要能显示摄像头视频流和虚拟网格高亮。
+
+### 11.12 给其他 AI 工具的快速读取清单
+
+如果其他 AI 工具只 clone 了这个仓库，建议按以下顺序读取：
+
+1. `README.md`
+2. `README.zh-CN.md`
+3. `AGENTS.md`
+4. `package.json`
+5. `src/config/api.js`
+6. `src/modules/sap/sapGateway.js`
+7. `src/modules/modula/deviceGateway.js`
+8. `src/modules/workstation/api.js`
+9. `src/modules/modula/config.js`
+10. `src/modules/sap/mockRepository.js`
+
+AI 工具最需要先知道的业务规则：
+
+- 页面首屏不能自动查询
+- 只有点击 `GO` 或明确的语音命令后才允许查询
+- Modula 托盘命名规则是 `机器号 + 层数`
+- 当前托盘范围是 `1001` 到 `1090`
+- 前端不控制 Modula 灯光
+- 托盘库存查询与 TO 任务列表分离
+- 当前仓库不使用 `.env` 自动加载
+- 视觉后端是外部配套服务，不是本仓库中已经提交的一部分
 
 ## 12. 后续开发约束
 

@@ -459,20 +459,262 @@ To reduce refactor risk, these old paths still exist as re-export wrappers:
 
 This means older imports can still work while new code should prefer `src/modules/...`.
 
-## 11. Local Start
+## 11. Deployment And Startup
+
+### 11.1 Component Deployment Order
+
+Recommended startup order:
+
+1. frontend app in this repository
+2. companion vision backend service
+3. optional SAP gateway implementation
+4. optional Modula gateway implementation
+5. optional AI workflow layer in `AGENTS.md` and `skills/`
+
+### 11.2 Component Matrix
+
+| Component | Code location | Required for demo | Startup command | Default port / endpoint | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Frontend app | this repository, mainly `src/` | Yes | `npm run dev` | `http://localhost:8108` | this is the only codebase versioned in this Git repository |
+| Vision backend | external companion FastAPI service consumed by `src/modules/workstation/api.js` | Yes for camera, scan-bind, pick, grid verification | `uvicorn main:app --host 127.0.0.1 --port 8100 --reload` | `http://127.0.0.1:8100` | backend code is not committed inside this repository |
+| SAP gateway | `src/modules/sap/sapGateway.js` | No, mock mode works without it | project-specific | project-specific | replace placeholder query/update methods when SAP interface is ready |
+| Modula gateway | `src/modules/modula/deviceGateway.js` | No, mock queue works without it | project-specific | project-specific | frontend no longer controls Modula lights |
+| AI workflow layer | `AGENTS.md`, `skills/` | No | no runtime process | n/a | helps Codex or other AI tools understand module boundaries quickly |
+
+### 11.3 Feature Dependency Map
+
+| Feature | Frontend only | Vision backend | SAP gateway | Modula gateway | Browser / hardware requirement |
+| --- | --- | --- | --- | --- | --- |
+| Task query list | Yes in mock mode | No | Yes in live mode | No | modern browser |
+| Tray inventory query | Yes in mock mode | No | Yes in live mode | No | modern browser |
+| Material location query / transfer | Yes in mock mode | No | Yes in live mode | No | modern browser |
+| Voice assistant | Yes | No | optional, depending on queried data source | No | browser speech recognition and speech synthesis support |
+| Vision workstation inbound / outbound | No | Yes | optional for future task sync | optional for future tray status sync | camera connected to backend machine |
+| Modula tray queue orchestration | Yes in current mock flow | No | optional | Yes in live mode | modern browser |
+
+### 11.4 Runtime Requirements
+
+| Requirement | Minimum role in project | Notes |
+| --- | --- | --- |
+| `Git` | clone / pull / push repository | required for collaboration and deployment |
+| `Node.js` + `npm` | run frontend | no engine field is pinned in `package.json`; use a current LTS version compatible with current Vite/React tooling |
+| `Python 3` | run companion vision backend | required only when using the vision workstation flow |
+| Modern browser | run frontend UI | Chrome or Edge recommended for speech APIs |
+| Camera on backend machine | run vision workstation | backend captures camera frames; frontend only displays the stream |
+| Audio output device | hear voice assistant feedback | optional but recommended for the voice assistant |
+
+### 11.5 Frontend NPM Dependencies
+
+Exact package versions are defined in `package.json`.
+
+Runtime dependencies:
+
+| Package | Version | Used for |
+| --- | --- | --- |
+| `react` | `^19.2.4` | UI runtime |
+| `react-dom` | `^19.2.4` | DOM rendering |
+| `react-router-dom` | `^7.13.2` | page routing |
+| `axios` | `^1.14.0` | HTTP requests |
+| `orbcafe-ui` | `^1.2.1` | table and message box components |
+| `@mui/material` | `^7.3.9` | UI base components used by ORBCAFE stack |
+| `@mui/icons-material` | `^7.3.9` | icon dependencies for ORBCAFE stack |
+| `@mui/x-date-pickers` | `^8.27.2` | date filter UI |
+| `@emotion/react` | `^11.14.0` | MUI styling runtime |
+| `@emotion/styled` | `^11.14.1` | MUI styling runtime |
+| `dayjs` | `^1.11.20` | date processing |
+| `lucide-react` | `^1.7.0` | icon set |
+| `tailwindcss` | `^4.2.2` | styling |
+| `@tailwindcss/vite` | `^4.2.2` | Tailwind + Vite integration |
+
+Development dependencies:
+
+| Package | Version | Used for |
+| --- | --- | --- |
+| `vite` | `^8.0.1` | dev server and build |
+| `@vitejs/plugin-react` | `^6.0.1` | React plugin for Vite |
+| `eslint` | `^9.39.4` | linting |
+| `@eslint/js` | `^9.39.4` | ESLint config helpers |
+| `eslint-plugin-react-hooks` | `^7.0.1` | React Hooks linting |
+| `eslint-plugin-react-refresh` | `^0.5.2` | React Refresh linting |
+| `globals` | `^17.4.0` | ESLint globals |
+| `@types/react` | `^19.2.14` | editor / tooling types |
+| `@types/react-dom` | `^19.2.3` | editor / tooling types |
+
+### 11.6 Companion Vision Backend Dependencies
+
+The companion backend is not committed in this repository, but the current frontend expects a FastAPI service with these Python dependencies:
+
+| Package | Source | Used for |
+| --- | --- | --- |
+| `fastapi` | companion backend `requirements.txt` | REST API |
+| `uvicorn` | companion backend `requirements.txt` | ASGI server |
+| `opencv-python-headless` | companion backend `requirements.txt` | camera frame capture and image diff |
+| `numpy` | companion backend `requirements.txt` | image and grid calculation |
+| `sqlalchemy` | companion backend `requirements.txt` | local inventory persistence |
+| `pydantic` | companion backend `requirements.txt` | request / response models |
+
+Expected backend endpoints currently consumed by frontend code:
+
+- `GET /state`
+- `GET /video_feed`
+- `POST /event/vision_session`
+- `POST /event/mode`
+- `POST /event/scan`
+- `POST /event/pick`
+- `POST /event/sensor_in`
+- `POST /event/sensor_out`
+- `POST /event/reset`
+- `GET /item-location`
+- `POST /item-location`
+
+### 11.7 Frontend Deployment Steps
+
+1. Clone the repository.
+2. Enter the repository root.
+3. Install dependencies.
+4. Confirm the workstation backend URL and data provider in `src/config/api.js`.
+5. Start the development server or build a production bundle.
 
 ```powershell
+git clone <your-repository-url>
+cd smart-workstation
 npm install
 npm run dev
 ```
 
-Default frontend URL:
+Production build commands:
 
-- `http://localhost:8108`
+```powershell
+npm run build
+npm run preview
+```
 
-Vision backend expected URL:
+Current frontend runtime defaults:
 
-- `http://127.0.0.1:8100`
+- frontend dev URL: `http://localhost:8108`
+- workstation backend URL: `http://127.0.0.1:8100`
+- data provider: `mock`
+
+Important configuration rule:
+
+- this repository currently does **not** load a `.env` file
+- if the vision backend port or host changes, update `src/config/api.js`
+- if the port text shown to users changes, also update:
+  - `src/modules/workstation/api.js`
+  - `src/i18n/workstationDict.js`
+  - `README.md`
+  - `README.zh-CN.md`
+
+### 11.8 Companion Vision Backend Deployment Steps
+
+This repository does not contain the backend runtime code, so another codebase or deployment package must provide the vision service.
+
+Recommended companion backend startup flow:
+
+1. Prepare the backend project directory.
+2. Install Python dependencies from its `requirements.txt`.
+3. Optionally set system environment variable `CAMERA_SOURCE` if the camera is not on device `0`.
+4. Start FastAPI on port `8100`.
+5. Verify the frontend can read `/state` and `/video_feed`.
+
+Example startup:
+
+```powershell
+cd <vision-backend-directory>
+pip install -r requirements.txt
+uvicorn main:app --host 127.0.0.1 --port 8100 --reload
+```
+
+Important backend notes:
+
+- current backend integration is configured by source code, not by `.env`
+- the frontend expects zero auto-query on first load
+- the second-level workstation page only works correctly when the backend stream and event APIs are alive
+
+### 11.9 SAP Integration Deployment Steps
+
+Current default mode is local mock mode.
+
+To keep mock mode:
+
+- keep `INVENTORY_DATA_PROVIDER = 'mock'` in `src/config/api.js`
+- use:
+  - `src/modules/sap/mock/sapOrders.js`
+  - `src/modules/sap/mock/itemLocationMapping.js`
+  - `src/modules/sap/mock/trayInventorySnapshot.js`
+
+To deploy a real SAP integration:
+
+1. implement the reserved methods in `src/modules/sap/sapGateway.js`
+2. keep all UI orchestration in `src/modules/sap/sapTaskService.js` and `src/modules/sap/sapUpdateService.js`
+3. keep tray inventory query separate from TO task rows
+4. keep inventory quantity as actual stock quantity, not requested quantity
+
+Reserved SAP methods to implement:
+
+- `queryOpenTasksFromSap()`
+- `queryTrayBinsFromSap()`
+- `queryBinMaterialsFromSap()`
+- `queryMaterialLocationFromSap()`
+- `updateMaterialLocationInSap()`
+- `updateTaskStatusInSap()`
+
+### 11.10 Modula Integration Deployment Steps
+
+Current default mode is frontend-side queue simulation plus business orchestration.
+
+To deploy a real Modula integration:
+
+1. implement:
+   - `requestTrayOpen()`
+   - `requestTrayReturn()`
+   - `readTrayStatus()`
+2. keep tray naming rule `machineNo + level`
+3. keep current tray range `1001` to `1090`
+4. keep queue orchestration in `src/modules/modula/queueService.js`
+5. do **not** add light control back into the frontend
+
+Important current queue rule:
+
+- the frontend user completes trays in sequence
+- concurrency limits are enforced for Modula orchestration, not for user-facing completion logic
+
+### 11.11 Verification Checklist After Deployment
+
+Minimum checks after startup:
+
+1. Opening the page must not auto-query data.
+2. Clicking `GO` must trigger query logic.
+3. Tray inventory query must show actual stock, not requested quantity.
+4. Material location query must support transfer dialog flow.
+5. Voice assistant must still work in `zh`, `en`, and `de`.
+6. If vision backend is running, the second-level workstation page must load camera stream and grid overlays.
+
+### 11.12 AI Quick Read Checklist
+
+If another AI tool clones only this repository, it should read files in this order:
+
+1. `README.md`
+2. `README.zh-CN.md`
+3. `AGENTS.md`
+4. `package.json`
+5. `src/config/api.js`
+6. `src/modules/sap/sapGateway.js`
+7. `src/modules/modula/deviceGateway.js`
+8. `src/modules/workstation/api.js`
+9. `src/modules/modula/config.js`
+10. `src/modules/sap/mockRepository.js`
+
+Most important business rules for AI tools:
+
+- no auto-query on first page load
+- query only after `GO` or explicit voice command
+- Modula tray naming rule is `machineNo + level`
+- current tray range is `1001` to `1090`
+- frontend does not control Modula lights
+- tray inventory query is separated from TO task rows
+- this repository does not currently use a `.env` loader
+- vision backend is an external companion service, not a committed part of this repository
 
 ## 12. Recommended Development Rule
 
