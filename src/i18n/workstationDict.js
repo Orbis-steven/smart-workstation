@@ -1,6 +1,6 @@
 export const workstationDict = {
   zh: {
-    overlay_error: '摄像头未开启：请先检查后端服务是否运行 (http://127.0.0.1:8000)。',
+    overlay_error: '摄像头未开启：请先检查后端服务是否运行 (http://127.0.0.1:8100)。',
     overlay_idle: '摄像头待机：正在自动获取空托盘基准图像...',
     reset: '重新开始 / 清空数据',
     panel_title: '系统控制面板',
@@ -32,7 +32,7 @@ export const workstationDict = {
     all_done: '当前托盘所有物料已处理完毕，3秒后自动收回并返回 SAP 页面进行下一步操作。',
     inbound_action_hint: '请在右侧真实的摄像头视野中放入物品，放置稳定后，点击“放置完成”。',
     outbound_action_hint: '请根据右侧画面提示的目标网格拿走对应的物品，手拿开后点击“取料完成”。',
-    backend_warning: 'SmartWorkStation Backend not reachable. Ensure FastAPI is running on port 8000.',
+    backend_warning: 'SmartWorkStation Backend not reachable. Ensure FastAPI is running on port 8100.',
     scan_success: '扫码绑定成功，已记录目标 Bin 位',
     pick_success: '已发起取料，请按目标 Bin 位操作',
     operation_failed: '操作失败',
@@ -52,7 +52,7 @@ export const workstationDict = {
     pending_items: '待扫描物料',
   },
   en: {
-    overlay_error: 'Camera inactive: Please check backend at http://127.0.0.1:8000.',
+    overlay_error: 'Camera inactive: Please check backend at http://127.0.0.1:8100.',
     overlay_idle: 'Camera standby: Automatically fetching empty tray baseline...',
     reset: 'Restart / Clear Data',
     panel_title: 'Control Panel',
@@ -84,7 +84,7 @@ export const workstationDict = {
     all_done: 'All tray items are finished. The tray will be returned and the SAP page will reopen in 3 seconds.',
     inbound_action_hint: 'Place the material in the live camera area, then click "Placement Done".',
     outbound_action_hint: 'Pick the target material from the highlighted grid, then click "Pick Done".',
-    backend_warning: 'SmartWorkStation Backend not reachable. Ensure FastAPI is running on port 8000.',
+    backend_warning: 'SmartWorkStation Backend not reachable. Ensure FastAPI is running on port 8100.',
     scan_success: 'Scan and bind successful. Target bin recorded.',
     pick_success: 'Pick request sent. Follow the target bin.',
     operation_failed: 'Operation failed',
@@ -104,7 +104,7 @@ export const workstationDict = {
     pending_items: 'Pending Items',
   },
   de: {
-    overlay_error: 'Kamera inaktiv: Bitte Backend unter http://127.0.0.1:8000 prüfen.',
+    overlay_error: 'Kamera inaktiv: Bitte Backend unter http://127.0.0.1:8100 prüfen.',
     overlay_idle: 'Kamera im Standby: Leeres Tablar wird als Basisbild geladen...',
     reset: 'Neu starten / Daten löschen',
     panel_title: 'Steuerungsbereich',
@@ -136,7 +136,7 @@ export const workstationDict = {
     all_done: 'Alle Artikel dieses Tablars sind fertig. Rückgabe und Rücksprung zur SAP-Seite in 3 Sekunden.',
     inbound_action_hint: 'Material im Kamerabereich ablegen und dann "Ablage abgeschlossen" klicken.',
     outbound_action_hint: 'Zielmaterial aus dem markierten Feld entnehmen und dann "Entnahme abgeschlossen" klicken.',
-    backend_warning: 'SmartWorkStation Backend not reachable. Ensure FastAPI is running on port 8000.',
+    backend_warning: 'SmartWorkStation Backend not reachable. Ensure FastAPI is running on port 8100.',
     scan_success: 'Scan erfolgreich. Ziel-Bin wurde gesetzt.',
     pick_success: 'Entnahme angefordert. Bitte Ziel-Bin beachten.',
     operation_failed: 'Vorgang fehlgeschlagen',

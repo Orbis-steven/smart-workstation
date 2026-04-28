@@ -468,11 +468,11 @@ npm run dev
 
 Default frontend URL:
 
-- `http://localhost:6681`
+- `http://localhost:8108`
 
 Vision backend expected URL:
 
-- `http://127.0.0.1:8000`
+- `http://127.0.0.1:8100`
 
 ## 12. Recommended Development Rule
 
