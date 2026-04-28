@@ -3,6 +3,7 @@ import { Mic, MicOff } from 'lucide-react';
 export function VoiceAssistantPanel({
   theme,
   title,
+  t,
   visionMode,
   voicePrompt,
   assistantTone,
@@ -25,7 +26,7 @@ export function VoiceAssistantPanel({
                 <div className={`block w-14 h-8 rounded-full transition-colors ${visionMode ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-gray-500'}`}></div>
                 <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${visionMode ? 'transform translate-x-6' : ''}`}></div>
               </div>
-              <span className={`text-base font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>图像识别模式</span>
+              <span className={`text-base font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>{t('visionModeLabel')}</span>
             </label>
 
             {visionMode && (
@@ -35,7 +36,7 @@ export function VoiceAssistantPanel({
                   <div className={`block w-14 h-8 rounded-full transition-colors ${voicePrompt ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-500'}`}></div>
                   <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${voicePrompt ? 'transform translate-x-6' : ''}`}></div>
                 </div>
-                <span className={`text-base font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>语音提示</span>
+                <span className={`text-base font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>{t('voicePromptLabel')}</span>
               </label>
             )}
           </div>
@@ -51,7 +52,7 @@ export function VoiceAssistantPanel({
                   ? 'bg-gray-700 border-gray-600 text-gray-100 hover:bg-gray-600'
                   : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
             }`}
-            title={isListening ? '停止语音助手' : '启动语音助手'}
+            title={isListening ? t('stopVoiceAssistant') : t('startVoiceAssistant')}
           >
             {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </button>
@@ -71,12 +72,12 @@ export function VoiceAssistantPanel({
       }`}>
         <div className="flex items-center gap-2">
           <div className={`w-2.5 h-2.5 rounded-full ${isListening ? 'bg-red-500 animate-pulse' : assistantTone === 'success' ? 'bg-emerald-500' : assistantTone === 'warning' ? 'bg-amber-500' : assistantTone === 'error' ? 'bg-red-500' : 'bg-slate-400'}`}></div>
-          <span className="text-sm font-bold">语音小助手</span>
+          <span className="text-sm font-bold">{t('voiceAssistantLabel')}</span>
         </div>
         <div className="text-sm leading-6">{assistantStatus}</div>
         {assistantTranscript && (
           <div className={`text-xs font-mono break-all ${theme === 'dark' ? 'text-gray-400' : 'text-slate-500'}`}>
-            识别内容：{assistantTranscript}
+            {t('transcriptLabel')}：{assistantTranscript}
           </div>
         )}
       </div>

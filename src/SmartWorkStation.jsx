@@ -30,7 +30,7 @@ export default function SmartWorkStation({
   onJobCompleted,
 }) {
   const lang = initialLang.startsWith('en') ? 'en' : initialLang.startsWith('de') ? 'de' : 'zh';
-  const t = (key) => formatMessage(workstationDict, lang, key);
+  const t = (key, params = {}) => formatMessage(workstationDict, lang, key, params);
 
   const [mode, setMode] = useState(job?.type === 'outbound' ? 'OUTBOUND' : 'INBOUND');
   const [state, setState] = useState('IDLE');
@@ -96,7 +96,7 @@ export default function SmartWorkStation({
       setMockItemId(displayPendingItems[0].itemNo);
       setPickItemId(displayPendingItems[0].itemNo);
       setCurrentBin(displayPendingItems[0].bin || '');
-      setCurrentCoords(displayPendingItems[0].x && displayPendingItems[0].y ? `(${displayPendingItems[0].x}, ${displayPendingItems[0].y})` : '');
+      setCurrentCoords(formatGridCoords(displayPendingItems[0].x, displayPendingItems[0].y));
       setActualQty(displayPendingItems[0].qty);
     } else {
       setMockItemId('');
@@ -175,7 +175,7 @@ export default function SmartWorkStation({
 
       if (item) {
         setCurrentBin(item.bin);
-        setCurrentCoords(`(${item.x}, ${item.y})`);
+        setCurrentCoords(formatGridCoords(item.x, item.y));
       }
 
       speak(t('scan_success'));
@@ -198,7 +198,7 @@ export default function SmartWorkStation({
 
       if (item) {
         setCurrentBin(item.bin);
-        setCurrentCoords(`(${item.x}, ${item.y})`);
+        setCurrentCoords(formatGridCoords(item.x, item.y));
       }
 
       speak(t('pick_success'));
@@ -221,42 +221,81 @@ export default function SmartWorkStation({
   const handleSensorOutClick = async () => {
     try {
       const response = await sendSensorOut();
-      alert(response.data.message);
-
       const message = response.data.message || '';
+      const diffResult = Array.isArray(response.data.diff_result) ? response.data.diff_result : [];
+      const actualGrid = Array.isArray(response.data.actual_grid) ? response.data.actual_grid : [];
+      const expectedGrid = Array.isArray(response.data.expected_grid) ? response.data.expected_grid : [];
+      const resultCode = response.data.result_code || '';
+      const currentItemNo = mode === 'INBOUND' ? mockItemId : pickItemId;
+      const targetItem = displayPendingItems.find((item) => item.itemNo === currentItemNo);
+      const expectedCoordsText = expectedGrid.length >= 2
+        ? formatGridCoords(expectedGrid[0], expectedGrid[1], { zeroBased: true })
+        : formatGridCoords(targetItem?.x, targetItem?.y);
+      const actualCoordsText = actualGrid.length >= 2
+        ? formatGridCoords(actualGrid[0], actualGrid[1], { zeroBased: true })
+        : diffResult.length >= 2
+          ? formatGridCoords(diffResult[0], diffResult[1], { zeroBased: true })
+          : '';
+      const resolvedSuccessCoords = actualCoordsText || expectedCoordsText || currentCoords || '-';
+      const resolvedExpectedCoords = expectedCoordsText || currentCoords || '-';
+      let alertMessage = message;
+      if (mode === 'INBOUND' && resultCode === 'inbound_success') {
+        alertMessage = t('bind_success_detail', {
+          tray: trayId || job?.tray || '-',
+          bin: targetItem?.bin || currentBin || '-',
+          coords: resolvedSuccessCoords,
+        });
+      } else if (mode === 'INBOUND' && resultCode === 'wrong_bin') {
+        alertMessage = t('wrong_bin_detail', {
+          actualCoords: actualCoordsText || '-',
+          expectedCoords: resolvedExpectedCoords,
+        });
+      } else if (mode === 'OUTBOUND' && resultCode === 'outbound_success') {
+        alertMessage = actualCoordsText
+          ? t('pick_success_detail', { coords: actualCoordsText })
+          : message;
+      } else if (mode === 'OUTBOUND' && resultCode === 'wrong_item') {
+        alertMessage = t('wrong_item_detail', {
+          actualCoords: actualCoordsText || '-',
+          expectedCoords: resolvedExpectedCoords,
+        });
+      }
+
+      alert(alertMessage);
+
       let isSuccess = false;
-      if (message.includes('Item bound')) {
+      if (resultCode === 'inbound_success' || message.includes('Item bound')) {
         speak(t('inbound_done'));
         isSuccess = true;
-      } else if (message.includes('Successfully picked')) {
+      } else if (resultCode === 'outbound_success' || message.includes('Successfully picked')) {
         speak(t('outbound_done'));
         isSuccess = true;
-      } else if (message.includes('Warning')) {
-        speak(message.includes('wrong bin') ? t('wrong_bin') : t('wrong_item'));
-      } else if (message.includes('No item')) {
+      } else if (resultCode === 'wrong_bin') {
+        speak(t('wrong_bin'));
+      } else if (resultCode === 'wrong_item') {
+        speak(t('wrong_item'));
+      } else if (resultCode === 'no_change' || message.includes('No item')) {
         speak(t('no_change'));
       } else {
         speak(t('generic_done'));
       }
 
-      const diffResult = response.data.diff_result;
       if (mode === 'INBOUND' && isSuccess && diffResult) {
-        setCurrentCoords(`(${diffResult[0] + 1}, ${diffResult[1] + 1})`);
+        setCurrentCoords(resolvedSuccessCoords);
       } else if (mode === 'OUTBOUND' && isSuccess) {
         setCurrentCoords((prev) => prev ? `${prev} 提取成功` : '提取成功');
       }
 
       if (isSuccess) {
-        const currentItemNo = mode === 'INBOUND' ? mockItemId : pickItemId;
-        const targetItem = displayPendingItems.find((item) => item.itemNo === currentItemNo);
         if (targetItem) {
           setCompletedItemIds((prev) => {
             const next = [...prev, targetItem.id];
             if (next.length === pendingItems.length) {
               speak(t('tray_finished'));
-              if (onJobCompleted) {
-                setTimeout(() => onJobCompleted(), 3000);
-              }
+              setTimeout(() => {
+                onJobCompleted?.();
+                onClose?.();
+              }, 3000);
             }
             return next;
           });
@@ -482,4 +521,17 @@ function EditableNumberRow({ label, value, onChange }) {
       />
     </div>
   );
+}
+
+function formatGridCoords(xValue, yValue, options = {}) {
+  const { zeroBased = false } = options;
+  const x = Number(xValue);
+  const y = Number(yValue);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return '';
+  }
+
+  const displayX = zeroBased ? x + 1 : x;
+  const displayY = zeroBased ? y + 1 : y;
+  return `(${displayX}, ${displayY})`;
 }

@@ -39,6 +39,8 @@ import { updateMaterialLocation } from './modules/sap/sapUpdateService';
 import {
   buildVoiceSearchSummary,
   describeSearchFilters,
+  getVoiceAssistantText,
+  isGenericTaskQueryIntent,
   parseVoiceCommand,
 } from './modules/sap/voiceCommandService';
 import { getItemLocationByItemNo } from './modules/sap/sapInventoryService';
@@ -79,7 +81,7 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
   const [showVisionModal, setShowVisionModal] = useState(false);
   const [pendingVisionOpen, setPendingVisionOpen] = useState(false);
   const [showManualPickModal, setShowManualPickModal] = useState(false);
-  const [assistantStatus, setAssistantStatus] = useState('点击话筒后说出指令，例如：帮我查一下今天有哪些出库任务。');
+  const [assistantStatus, setAssistantStatus] = useState(getVoiceAssistantText('idlePrompt', locale));
   const [assistantTone, setAssistantTone] = useState('idle');
 
   const processedJobIds = useRef(new Set());
@@ -112,24 +114,25 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
   } = useSpeechRecognition({
     locale,
     onUnsupported: () => {
-      const message = '当前浏览器不支持语音识别，请使用 Chrome 或 Edge。';
+      const message = getVoiceAssistantText('unsupported', locale);
       setAssistantFeedback(message, 'error');
       speakAssistant(message);
     },
-    onStart: () => setAssistantFeedback('正在听，请直接说出指令。', 'listening'),
+    onStart: () => setAssistantFeedback(getVoiceAssistantText('listening', locale), 'listening'),
     onError: (error) => {
       const errorMessage = error === 'not-allowed'
-        ? '语音权限被拒绝，请先允许浏览器访问麦克风。'
+        ? getVoiceAssistantText('permissionDenied', locale)
         : error === 'no-speech'
-          ? '没有检测到说话内容，请再试一次。'
-          : `语音识别失败：${error}`;
+          ? getVoiceAssistantText('noSpeech', locale)
+          : getVoiceAssistantText('recognitionFailed', locale, { error });
       setAssistantFeedback(errorMessage, 'error');
       speakAssistant(errorMessage);
     },
     onTranscript: async (transcript) => {
       if (!transcript) {
-        setAssistantFeedback('没有识别到有效语音，请重试。', 'warning');
-        speakAssistant('没有识别到有效语音，请重试。');
+        const message = getVoiceAssistantText('noValidSpeech', locale);
+        setAssistantFeedback(message, 'warning');
+        speakAssistant(message);
         return;
       }
       await executeVoiceCommand(transcript);
@@ -203,7 +206,7 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
     const data = await fetchData(finalFilters);
 
     if (options?.announce) {
-      const summary = buildVoiceSearchSummary(data || [], finalFilters);
+      const summary = buildVoiceSearchSummary(data || [], finalFilters, locale);
       setAssistantFeedback(summary, data?.length ? 'success' : 'warning');
       speakAssistant(summary);
     }
@@ -316,19 +319,22 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
   const executeVoiceCommand = async (rawText) => {
     const spokenText = String(rawText || '').trim();
     if (!spokenText) {
-      setAssistantFeedback('没有识别到有效语音，请重试。', 'warning');
-      speakAssistant('没有识别到有效语音，请重试。');
+      const message = getVoiceAssistantText('noValidSpeech', locale);
+      setAssistantFeedback(message, 'warning');
+      speakAssistant(message);
       return;
     }
 
-    const command = parseVoiceCommand(spokenText);
+    const command = parseVoiceCommand(spokenText, locale);
 
     if (command.type === 'toggleVision') {
       setVisionMode(command.enabled);
       if (!command.enabled) {
         setVoicePrompt(false);
       }
-      const message = command.enabled ? '已开启图像识别模式。' : '已关闭图像识别模式。';
+      const message = command.enabled
+        ? getVoiceAssistantText('visionModeOn', locale)
+        : getVoiceAssistantText('visionModeOff', locale);
       setAssistantFeedback(message, 'success');
       speakAssistant(message);
       return;
@@ -336,7 +342,9 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
 
     if (command.type === 'toggleVoicePrompt') {
       setVoicePrompt(command.enabled);
-      const message = command.enabled ? '已开启语音提示。' : '已关闭语音提示。';
+      const message = command.enabled
+        ? getVoiceAssistantText('voicePromptOn', locale)
+        : getVoiceAssistantText('voicePromptOff', locale);
       setAssistantFeedback(message, 'success');
       speakAssistant(message);
       return;
@@ -344,8 +352,9 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
 
     if (command.type === 'clearSelection') {
       setSelectedRows([]);
-      setAssistantFeedback('已取消当前选中的物料。', 'success');
-      speakAssistant('已取消当前选中的物料。');
+      const message = getVoiceAssistantText('selectionCleared', locale);
+      setAssistantFeedback(message, 'success');
+      speakAssistant(message);
       return;
     }
 
@@ -353,17 +362,19 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
       const selectableRows = rows.filter((row) => !isRowDisabled(row));
       setSelectedRows(selectableRows);
       const message = selectableRows.length
-        ? `已为您全选 ${selectableRows.length} 个可操作物料。`
-        : '当前没有可全选的物料。';
+        ? getVoiceAssistantText('allSelected', locale, { count: selectableRows.length })
+        : getVoiceAssistantText('noSelectableItems', locale);
       setAssistantFeedback(message, selectableRows.length ? 'success' : 'warning');
       speakAssistant(message);
       return;
     }
 
     if (command.type === 'submitJob') {
-      const actionLabel = command.jobType === 'outbound' ? '出库' : '入库';
-      setAssistantFeedback(`正在为您发起${actionLabel}任务。`, 'listening');
-      speakAssistant(`正在为您发起${actionLabel}任务。`);
+      const message = command.jobType === 'outbound'
+        ? getVoiceAssistantText('submitOutbound', locale)
+        : getVoiceAssistantText('submitInbound', locale);
+      setAssistantFeedback(message, 'listening');
+      speakAssistant(message);
       handleJob(command.jobType);
       return;
     }
@@ -376,21 +387,24 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
 
       if (!('trayInventory' in command.filters)) mergedFilters.trayInventory = '';
       if (!('itemNo' in command.filters)) mergedFilters.itemNo = '';
-      if (!('jobType' in command.filters) && /任务|查询|查一下|查一查|筛选/.test(spokenText.replace(/\s+/g, ''))) delete mergedFilters.jobType;
+      if (!('jobType' in command.filters) && isGenericTaskQueryIntent(spokenText)) delete mergedFilters.jobType;
       if (!('toNo' in command.filters)) mergedFilters.toNo = '';
       if (!('workOrderNo' in command.filters)) mergedFilters.workOrderNo = '';
       if (!('deliveryNo' in command.filters)) mergedFilters.deliveryNo = '';
       if (!('date' in command.filters)) mergedFilters.date = [];
 
-      const announceText = `正在查询${describeSearchFilters(mergedFilters)}。`;
+      const announceText = getVoiceAssistantText('searching', locale, {
+        target: describeSearchFilters(mergedFilters, locale),
+      });
       setAssistantFeedback(announceText, 'listening');
       speakAssistant(announceText);
       await handleSearch(mergedFilters, { announce: true });
       return;
     }
 
-    setAssistantFeedback('暂时无法理解这条语音指令，请换一种说法，例如“帮我查一下今天有哪些出库任务”。', 'warning');
-    speakAssistant('暂时无法理解这条语音指令，请换一种说法。');
+    const message = getVoiceAssistantText('unknownCommand', locale);
+    setAssistantFeedback(message, 'warning');
+    speakAssistant(message);
   };
 
   const handleJob = (type) => {
@@ -574,7 +588,14 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
   }, [currentProcessingJob, pendingVisionOpen, showVisionModal]);
 
   useEffect(() => {
-    setAssistantFeedback('点击话筒后说出指令，例如：帮我查一下今天有哪些出库任务。');
+    if (showVisionModal && !currentProcessingJob) {
+      setShowVisionModal(false);
+      setPendingVisionOpen(false);
+    }
+  }, [currentProcessingJob, showVisionModal]);
+
+  useEffect(() => {
+    setAssistantFeedback(getVoiceAssistantText('idlePrompt', locale));
   }, [locale]);
 
   useEffect(() => (
@@ -593,6 +614,7 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
             <VoiceAssistantPanel
               theme={theme}
               title={t('title')}
+              t={t}
               visionMode={visionMode}
               voicePrompt={voicePrompt}
               assistantTone={assistantTone}
