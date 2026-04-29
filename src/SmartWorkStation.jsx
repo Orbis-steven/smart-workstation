@@ -4,6 +4,7 @@ import { ControlBtn } from './components/workstation/ControlBtn';
 import { PendingItemsList } from './components/workstation/PendingItemsList';
 import { InventoryTable } from './components/workstation/InventoryTable';
 import { VisionGridPanel } from './components/workstation/VisionGridPanel';
+import { useLocalCamera } from './hooks/useLocalCamera';
 import { workstationDict } from './i18n/workstationDict';
 import { formatMessage } from './i18n/formatMessage';
 import {
@@ -37,9 +38,9 @@ export default function SmartWorkStation({
   const [currentItem, setCurrentItem] = useState(null);
   const [targetGrids, setTargetGrids] = useState([]);
   const [inventory, setInventory] = useState([]);
-  const [imgError, setImgError] = useState(false);
   const [completedItemIds, setCompletedItemIds] = useState([]);
   const [visionReady, setVisionReady] = useState(false);
+  const { videoRef, status: cameraStatus, errorCode: cameraErrorCode } = useLocalCamera({ enabled: true });
 
   const displayPendingItems = useMemo(
     () => (pendingItems || []).filter((item) => !completedItemIds.includes(item.id)),
@@ -58,6 +59,9 @@ export default function SmartWorkStation({
   const hasLoggedError = useRef(false);
 
   const speak = (text) => speakMessage({ enabled: voiceEnabled, locale: lang, text });
+  const showWorkstationError = (error, fallbackKey = 'backend_warning') => {
+    alert(getWorkstationErrorMessage(error, t(fallbackKey)));
+  };
 
   const fetchStateFromBackend = async () => {
     try {
@@ -159,7 +163,7 @@ export default function SmartWorkStation({
       setMode(newMode);
       fetchStateFromBackend();
     } catch (error) {
-      alert(getWorkstationErrorMessage(error));
+      showWorkstationError(error);
     }
   };
 
@@ -181,7 +185,7 @@ export default function SmartWorkStation({
       speak(t('scan_success'));
       fetchStateFromBackend();
     } catch (error) {
-      alert(getWorkstationErrorMessage(error));
+      showWorkstationError(error);
       speak(t('operation_failed'));
     }
   };
@@ -204,7 +208,7 @@ export default function SmartWorkStation({
       speak(t('pick_success'));
       fetchStateFromBackend();
     } catch (error) {
-      alert(getWorkstationErrorMessage(error));
+      showWorkstationError(error);
       speak(t('operation_failed'));
     }
   };
@@ -214,7 +218,7 @@ export default function SmartWorkStation({
       await sendSensorIn();
       fetchStateFromBackend();
     } catch (error) {
-      alert(getWorkstationErrorMessage(error));
+      showWorkstationError(error);
     }
   };
 
@@ -283,7 +287,7 @@ export default function SmartWorkStation({
       if (mode === 'INBOUND' && isSuccess && diffResult) {
         setCurrentCoords(resolvedSuccessCoords);
       } else if (mode === 'OUTBOUND' && isSuccess) {
-        setCurrentCoords((prev) => prev ? `${prev} 提取成功` : '提取成功');
+        setCurrentCoords((prev) => prev ? `${prev} ${t('generic_pick_success')}` : t('generic_pick_success'));
       }
 
       if (isSuccess) {
@@ -304,7 +308,7 @@ export default function SmartWorkStation({
 
       fetchStateFromBackend();
     } catch (error) {
-      alert(getWorkstationErrorMessage(error));
+      showWorkstationError(error, 'operation_failed');
       speak(t('diff_failed'));
     }
   };
@@ -320,7 +324,7 @@ export default function SmartWorkStation({
       autoOpened.current = false;
       fetchStateFromBackend();
     } catch (error) {
-      alert(getWorkstationErrorMessage(error));
+      showWorkstationError(error);
     }
   };
 
@@ -428,6 +432,7 @@ export default function SmartWorkStation({
                 mode={mode}
                 pendingItems={displayPendingItems}
                 selectedItemNo={mode === 'INBOUND' ? mockItemId : pickItemId}
+                t={t}
               />
 
               {displayPendingItems.length === 0 && pendingItems.length > 0 && (
@@ -464,10 +469,9 @@ export default function SmartWorkStation({
         <div className="lg:col-span-2">
           <VisionGridPanel
             title={t('camera_title')}
-            job={job}
-            imgError={imgError}
-            onImageError={() => setImgError(true)}
-            onImageLoad={() => setImgError(false)}
+            videoRef={videoRef}
+            cameraStatus={cameraStatus}
+            cameraErrorCode={cameraErrorCode}
             state={state}
             visionReady={visionReady}
             inventory={inventory}

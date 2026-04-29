@@ -12,6 +12,7 @@ Current scope:
 - Workstation UI for SAP task query, tray inventory query, material location query
 - Modula tray queue orchestration
 - Vision workstation page
+- Browser local-camera preview in the vision workstation page
 - Voice assistant
 - Local mock data flow for SAP query/update simulation
 
@@ -23,6 +24,7 @@ Important business rule already preserved:
 - Current Modula machine number is `1`
 - Current tray range is `1001` to `1090`
 - Modula no longer controls light hardware in this frontend design
+- In the task list page, clicking anywhere on a task row toggles that row checkbox
 
 ## 2. Tech Stack
 
@@ -175,6 +177,8 @@ This means:
 
 - `src/hooks/useSpeechRecognition.js`
   - browser speech recognition lifecycle wrapper
+- `src/hooks/useLocalCamera.js`
+  - browser local camera lifecycle wrapper for the vision workstation page
 
 ## 5. Core Page Responsibilities
 
@@ -476,7 +480,7 @@ Recommended startup order:
 | Component | Code location | Required for demo | Startup command | Default port / endpoint | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Frontend app | this repository, mainly `src/` | Yes | `npm run dev` | `http://localhost:8108` | this is the only codebase versioned in this Git repository |
-| Vision backend | external companion FastAPI service consumed by `src/modules/workstation/api.js` | Yes for camera, scan-bind, pick, grid verification | `uvicorn main:app --host 127.0.0.1 --port 8100 --reload` | `http://127.0.0.1:8100` | backend code is not committed inside this repository |
+| Vision backend | external companion FastAPI service consumed by `src/modules/workstation/api.js` | Yes for workstation state, scan-bind, pick, and grid verification | `uvicorn main:app --host 127.0.0.1 --port 8100 --reload` | `http://127.0.0.1:8100` | backend code is not committed inside this repository; the browser camera preview is now local to the end user |
 | SAP gateway | `src/modules/sap/sapGateway.js` | No, mock mode works without it | project-specific | project-specific | replace placeholder query/update methods when SAP interface is ready |
 | Modula gateway | `src/modules/modula/deviceGateway.js` | No, mock queue works without it | project-specific | project-specific | frontend no longer controls Modula lights |
 | AI workflow layer | `AGENTS.md`, `skills/` | No | no runtime process | n/a | helps Codex or other AI tools understand module boundaries quickly |
@@ -489,7 +493,7 @@ Recommended startup order:
 | Tray inventory query | Yes in mock mode | No | Yes in live mode | No | modern browser |
 | Material location query / transfer | Yes in mock mode | No | Yes in live mode | No | modern browser |
 | Voice assistant | Yes | No | optional, depending on queried data source | No | browser speech recognition and speech synthesis support |
-| Vision workstation inbound / outbound | No | Yes | optional for future task sync | optional for future tray status sync | camera connected to backend machine |
+| Vision workstation inbound / outbound | No | Yes | optional for future task sync | optional for future tray status sync | modern browser with local camera permission |
 | Modula tray queue orchestration | Yes in current mock flow | No | optional | Yes in live mode | modern browser |
 
 ### 11.4 Runtime Requirements
@@ -500,7 +504,7 @@ Recommended startup order:
 | `Node.js` + `npm` | run frontend | no engine field is pinned in `package.json`; use a current LTS version compatible with current Vite/React tooling |
 | `Python 3` | run companion vision backend | required only when using the vision workstation flow |
 | Modern browser | run frontend UI | Chrome or Edge recommended for speech APIs |
-| Camera on backend machine | run vision workstation | backend captures camera frames; frontend only displays the stream |
+| Camera on user machine | run vision workstation | the browser opens the user's local camera with `getUserMedia()` |
 | Audio output device | hear voice assistant feedback | optional but recommended for the voice assistant |
 
 ### 11.5 Frontend NPM Dependencies
@@ -556,7 +560,6 @@ The companion backend is not committed in this repository, but the current front
 Expected backend endpoints currently consumed by frontend code:
 
 - `GET /state`
-- `GET /video_feed`
 - `POST /event/vision_session`
 - `POST /event/mode`
 - `POST /event/scan`
@@ -566,6 +569,14 @@ Expected backend endpoints currently consumed by frontend code:
 - `POST /event/reset`
 - `GET /item-location`
 - `POST /item-location`
+
+Important current architecture rule:
+
+- camera preview in the second-level workstation page now comes from the user's browser local camera
+- workstation business APIs still come from the companion backend on port `8100`
+- in other words:
+  - local camera = browser side
+  - task state / scan / pick / diff / reset = backend side
 
 ### 11.7 Frontend Deployment Steps
 
@@ -592,18 +603,17 @@ npm run preview
 Current frontend runtime defaults:
 
 - frontend dev URL: `http://localhost:8108`
-- workstation backend URL: `http://127.0.0.1:8100`
+- local development workstation backend URL: `http://127.0.0.1:8100`
+- deployed workstation backend URL: same-origin by default, or `VITE_WORKSTATION_API_URL` if explicitly configured
 - data provider: `mock`
 
 Important configuration rule:
 
-- this repository currently does **not** load a `.env` file
-- if the vision backend port or host changes, update `src/config/api.js`
-- if the port text shown to users changes, also update:
-  - `src/modules/workstation/api.js`
-  - `src/i18n/workstationDict.js`
-  - `README.md`
-  - `README.zh-CN.md`
+- this repository supports `import.meta.env.VITE_WORKSTATION_API_URL`
+- if `VITE_WORKSTATION_API_URL` is empty:
+  - local browser access uses `http://127.0.0.1:8100`
+  - deployed pages use `window.location.origin`
+- if the workstation backend port or host changes, update deployment config first; only update `src/config/api.js` when the default fallback strategy itself must change
 
 ### 11.8 Companion Vision Backend Deployment Steps
 
@@ -613,9 +623,9 @@ Recommended companion backend startup flow:
 
 1. Prepare the backend project directory.
 2. Install Python dependencies from its `requirements.txt`.
-3. Optionally set system environment variable `CAMERA_SOURCE` if the camera is not on device `0`.
-4. Start FastAPI on port `8100`.
-5. Verify the frontend can read `/state` and `/video_feed`.
+3. Start FastAPI on port `8100`.
+4. Verify the frontend can read `/state`, `/event/*`, and `/item-location`.
+5. Verify the browser can open the local camera on the user machine.
 
 Example startup:
 
@@ -627,9 +637,14 @@ uvicorn main:app --host 127.0.0.1 --port 8100 --reload
 
 Important backend notes:
 
-- current backend integration is configured by source code, not by `.env`
+- current backend integration is controlled by frontend runtime URL resolution:
+  - local fallback: `127.0.0.1:8100`
+  - deployed fallback: same-origin
+  - explicit override: `VITE_WORKSTATION_API_URL`
 - the frontend expects zero auto-query on first load
-- the second-level workstation page only works correctly when the backend stream and event APIs are alive
+- the second-level workstation page needs both:
+  - browser local camera permission
+  - live backend event/state APIs on the workstation backend
 
 ### 11.9 SAP Integration Deployment Steps
 
@@ -688,7 +703,8 @@ Minimum checks after startup:
 3. Tray inventory query must show actual stock, not requested quantity.
 4. Material location query must support transfer dialog flow.
 5. Voice assistant must still work in `zh`, `en`, and `de`.
-6. If vision backend is running, the second-level workstation page must load camera stream and grid overlays.
+6. If vision backend is running, the second-level workstation page must open the user's local browser camera and still load backend-driven grid/task state.
+7. In task query mode, clicking anywhere inside a task row must toggle the row checkbox.
 
 ### 11.12 AI Quick Read Checklist
 
@@ -713,7 +729,9 @@ Most important business rules for AI tools:
 - current tray range is `1001` to `1090`
 - frontend does not control Modula lights
 - tray inventory query is separated from TO task rows
-- this repository does not currently use a `.env` loader
+- local camera preview is browser-side, not backend-side
+- workstation business APIs still use the companion backend
+- row selection on the task list supports full-row click toggle
 - vision backend is an external companion service, not a committed part of this repository
 
 ## 12. Recommended Development Rule

@@ -1,4 +1,4 @@
-export function PendingItemsList({ mode, pendingItems, selectedItemNo }) {
+export function PendingItemsList({ pendingItems, selectedItemNo, t }) {
   if (!pendingItems?.length) {
     return null;
   }
@@ -7,7 +7,7 @@ export function PendingItemsList({ mode, pendingItems, selectedItemNo }) {
     <div className="pl-4 mt-4">
       <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
         <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase flex items-center justify-between">
-          待扫描物料
+          {t('pending_items')}
           <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{pendingItems.length}</span>
         </h4>
         <ul className="text-sm space-y-1 max-h-32 overflow-y-auto pr-1">

@@ -77,7 +77,7 @@ export function VoiceAssistantPanel({
         <div className="text-sm leading-6">{assistantStatus}</div>
         {assistantTranscript && (
           <div className={`text-xs font-mono break-all ${theme === 'dark' ? 'text-gray-400' : 'text-slate-500'}`}>
-            {t('transcriptLabel')}：{assistantTranscript}
+            {t('transcriptLabel')}: {assistantTranscript}
           </div>
         )}
       </div>

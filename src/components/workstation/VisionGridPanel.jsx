@@ -1,4 +1,3 @@
-import { WORKSTATION_API_URL } from '../../config/api';
 import {
   getGridStyle,
   getInventoryBinLabel,
@@ -7,12 +6,19 @@ import {
   getTaskItemKey,
 } from '../../modules/workstation/grid';
 
+const CAMERA_ERROR_TEXT_KEYS = {
+  permission_denied: 'overlay_permission_denied',
+  not_found: 'overlay_not_found',
+  in_use: 'overlay_in_use',
+  constraint_failed: 'overlay_constraint_failed',
+  unsupported: 'overlay_unsupported',
+};
+
 export function VisionGridPanel({
   title,
-  job,
-  imgError,
-  onImageError,
-  onImageLoad,
+  videoRef,
+  cameraStatus,
+  cameraErrorCode,
   state,
   visionReady,
   inventory,
@@ -25,29 +31,38 @@ export function VisionGridPanel({
 }) {
   const gridCellWidth = 100 / 17;
   const gridCellHeight = 100 / 2;
+  const hasCameraError = cameraStatus === 'error';
+  const isRequestingCamera = cameraStatus === 'requesting';
+  const cameraErrorTextKey = CAMERA_ERROR_TEXT_KEYS[cameraErrorCode] || 'overlay_error';
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 h-full">
       <h2 className="text-xl font-semibold mb-4">{title}</h2>
 
       <div className="relative w-full max-w-2xl mx-auto border-4 border-gray-800 rounded-xl overflow-hidden bg-gray-100 aspect-[4/3]">
-        <img
-          src={`${WORKSTATION_API_URL}/video_feed?t=${job?.id || 'vision'}`}
-          alt="Live Camera Feed"
-          className={`absolute inset-0 w-full h-full object-cover ${imgError ? 'hidden' : 'block'}`}
-          onError={onImageError}
-          onLoad={onImageLoad}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`absolute inset-0 w-full h-full object-cover ${hasCameraError ? 'hidden' : 'block'}`}
         />
 
-        {state === 'IDLE' && !visionReady && !imgError && (
+        {isRequestingCamera && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 z-20 bg-gray-100/80 p-8 text-center backdrop-blur-sm">
+            <p className="text-lg font-medium">{t('overlay_requesting')}</p>
+          </div>
+        )}
+
+        {state === 'IDLE' && !visionReady && !hasCameraError && !isRequestingCamera && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 z-20 bg-gray-100/80 p-8 text-center backdrop-blur-sm">
             <p className="text-lg font-medium">{t('overlay_idle')}</p>
           </div>
         )}
 
-        {imgError && (
+        {hasCameraError && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-red-500 z-20 bg-red-50 p-8 text-center backdrop-blur-sm">
-            <p className="text-lg font-medium">{t('overlay_error')}</p>
+            <p className="text-lg font-medium">{t(cameraErrorTextKey)}</p>
           </div>
         )}
 

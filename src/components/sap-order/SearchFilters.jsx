@@ -31,19 +31,19 @@ export function SearchFilters({
             onChange={(event) => onFilterValuesChange({ ...filterValues, toNo: event.target.value })}
             onKeyDown={(event) => event.key === 'Enter' && onSearch(filterValues)}
             className={`w-full border-2 ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500' : 'border-gray-300'} rounded-xl px-4 py-3 text-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500`}
-            placeholder="TO-1001"
+            placeholder={t('toPlaceholder')}
           />
         </div>
 
         <div className="w-[220px]">
-          <label className={`block text-base font-bold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} mb-2`}>物料号</label>
+          <label className={`block text-base font-bold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} mb-2`}>{t('materialNoLabel')}</label>
           <input
             type="text"
             value={filterValues.itemNo || ''}
             onChange={(event) => onFilterValuesChange({ ...filterValues, itemNo: event.target.value })}
             onKeyDown={(event) => event.key === 'Enter' && onSearch(filterValues)}
             className={`w-full border-2 ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500' : 'border-gray-300'} rounded-xl px-4 py-3 text-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500`}
-            placeholder="7733-2009-113-P01"
+            placeholder={t('itemPlaceholder')}
           />
         </div>
 
@@ -58,7 +58,7 @@ export function SearchFilters({
             }}
             onKeyDown={(event) => event.key === 'Enter' && onSearch({ ...filterValues, trayInventory: trayInventoryInput || event.currentTarget.value })}
             className={`w-full border-2 ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500' : 'border-gray-300'} rounded-xl px-4 py-3 text-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500`}
-            placeholder="1001"
+            placeholder={t('trayInventoryPlaceholder')}
           />
         </div>
 
@@ -72,7 +72,7 @@ export function SearchFilters({
                 onChange={(event) => onFilterValuesChange({ ...filterValues, workOrderNo: event.target.value })}
                 onKeyDown={(event) => event.key === 'Enter' && onSearch(filterValues)}
                 className={`w-full border-2 ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500' : 'border-gray-300'} rounded-xl px-4 py-3 text-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500`}
-                placeholder="WO-20010"
+                placeholder={t('workOrderPlaceholder')}
               />
             </div>
 
@@ -84,7 +84,7 @@ export function SearchFilters({
                 onChange={(event) => onFilterValuesChange({ ...filterValues, deliveryNo: event.target.value })}
                 onKeyDown={(event) => event.key === 'Enter' && onSearch(filterValues)}
                 className={`w-full border-2 ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-500' : 'border-gray-300'} rounded-xl px-4 py-3 text-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500`}
-                placeholder="DO-30010"
+                placeholder={t('deliveryPlaceholder')}
               />
             </div>
           </>

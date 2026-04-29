@@ -3,6 +3,7 @@ export function TransferModal({
   theme,
   form,
   loading,
+  t,
   onClose,
   onChange,
   onConfirm,
@@ -15,12 +16,12 @@ export function TransferModal({
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className={`${theme === 'dark' ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-white border-gray-200 text-gray-900'} w-full max-w-lg rounded-2xl shadow-2xl border overflow-hidden`}>
         <div className={`px-6 py-4 border-b ${theme === 'dark' ? 'border-gray-800 bg-gray-800/70' : 'border-gray-100 bg-slate-50'}`}>
-          <h2 className="text-xl font-bold">库位转移</h2>
-          <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>确认后当前系统会写入本地映射文件，后续接入 SAP 时这里会调用 SAP 接口同步。</p>
+          <h2 className="text-xl font-bold">{t('transferTitle')}</h2>
+          <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{t('transferIntro')}</p>
         </div>
         <div className="p-6 space-y-4">
           <div>
-            <label className={`block text-sm font-bold mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>物料号</label>
+            <label className={`block text-sm font-bold mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{t('materialNoLabel')}</label>
             <input
               value={form.itemNo}
               disabled
@@ -29,16 +30,16 @@ export function TransferModal({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={`block text-sm font-bold mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>转入 Tray</label>
+              <label className={`block text-sm font-bold mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{t('transferTargetTray')}</label>
               <input
                 value={form.tray}
                 onChange={(event) => onChange({ ...form, tray: event.target.value })}
-                placeholder="1001"
+                placeholder={t('trayInventoryPlaceholder')}
                 className={`w-full border-2 rounded-xl px-4 py-3 text-base focus:ring-indigo-500 focus:border-indigo-500 ${theme === 'dark' ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white border-gray-300'}`}
               />
             </div>
             <div>
-              <label className={`block text-sm font-bold mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>转入 Bin</label>
+              <label className={`block text-sm font-bold mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{t('transferTargetBin')}</label>
               <input
                 value={form.bin}
                 onChange={(event) => onChange({ ...form, bin: event.target.value })}
@@ -53,14 +54,14 @@ export function TransferModal({
             onClick={onClose}
             className={`px-5 py-2.5 rounded-xl font-bold border ${theme === 'dark' ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
           >
-            取消
+            {t('cancel')}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
             className={`px-6 py-2.5 rounded-xl font-bold text-white ${loading ? 'bg-gray-400 cursor-wait' : 'bg-amber-500 hover:bg-amber-600'}`}
           >
-            {loading ? '处理中...' : '确认转移'}
+            {loading ? `${t('processing')}...` : t('confirmTransfer')}
           </button>
         </div>
       </div>

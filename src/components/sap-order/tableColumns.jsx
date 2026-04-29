@@ -2,7 +2,6 @@ import { findQueueJobForRow } from '../../modules/modula/queueService';
 
 export function buildSapOrderColumns({
   t,
-  locale,
   rows,
   selectedRows,
   isRowDisabled,
@@ -21,6 +20,7 @@ export function buildSapOrderColumns({
             type="checkbox"
             checked={rows.length > 0 && rows.filter((row) => !isRowDisabled(row)).length > 0 && selectedRows.length === rows.filter((row) => !isRowDisabled(row)).length}
             onChange={handleSelectAll}
+            onClick={(event) => event.stopPropagation()}
             disabled={rows.length === 0 || rows.filter((row) => !isRowDisabled(row)).length === 0}
             className="w-4 h-4 text-indigo-600 rounded border-gray-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           />
@@ -35,6 +35,7 @@ export function buildSapOrderColumns({
               type="checkbox"
               checked={selectedRows.some((selectedRow) => selectedRow.id === row.id)}
               onChange={(event) => handleSelectRow(row, event.target.checked)}
+              onClick={(event) => event.stopPropagation()}
               disabled={disabled}
               className={`w-4 h-4 text-indigo-600 rounded border-gray-300 ${disabled ? 'opacity-40 cursor-not-allowed bg-gray-100' : 'cursor-pointer'}`}
             />
@@ -70,9 +71,9 @@ export function buildSapOrderColumns({
               ? 'text-green-600 font-medium'
               : 'text-indigo-600 font-medium';
         const label = isLocationRow
-          ? (locale === 'zh' ? '库位' : locale === 'de' ? 'Lagerplatz' : 'Location')
+          ? t('jobTypeLocation')
           : isInventoryRow
-            ? (locale === 'zh' ? '库存' : locale === 'de' ? 'Bestand' : 'Inventory')
+            ? t('jobTypeInventory')
             : row.jobType === 'inbound' ? t('inbound') : t('outbound');
 
         return <span className={className}>{label}</span>;
@@ -105,7 +106,7 @@ export function buildSapOrderColumns({
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
           <span>{row.tray}</span>
-          {row.isRecommendedBin && <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 font-bold border border-blue-200 whitespace-nowrap">推荐</span>}
+          {row.isRecommendedBin && <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 font-bold border border-blue-200 whitespace-nowrap">{t('recommended')}</span>}
         </div>
       ),
     },
@@ -116,7 +117,7 @@ export function buildSapOrderColumns({
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
           <span>{row.bin}</span>
-          {row.isRecommendedBin && <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 font-bold border border-blue-200 whitespace-nowrap">推荐</span>}
+          {row.isRecommendedBin && <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 font-bold border border-blue-200 whitespace-nowrap">{t('recommended')}</span>}
         </div>
       ),
     },

@@ -50,7 +50,7 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
   const t = (key, params = {}) => formatMessage(sapOrderDict, locale, key, params);
 
   const [msgOpen, setMsgOpen] = useState(false);
-  const [msgTitle, setMsgTitle] = useState('操作确认');
+  const [msgTitle, setMsgTitle] = useState(t('operationConfirm'));
   const [msgContent, setMsgContent] = useState('');
   const [isConfirmingJob, setIsConfirmingJob] = useState(false);
   const [confirmJobData, setConfirmJobData] = useState(null);
@@ -236,6 +236,15 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
     }
   };
 
+  const handleRowClick = (row) => {
+    if (lastQueryMode !== SAP_QUERY_MODES.TASKS || isRowDisabled(row)) {
+      return;
+    }
+
+    const isSelected = selectedRows.some((selectedRow) => selectedRow.id === row.id);
+    handleSelectRow(row, !isSelected);
+  };
+
   const columns = useMemo(() => buildSapOrderColumns({
     t,
     locale,
@@ -252,8 +261,8 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
   const openTransferModal = () => {
     const row = rows.find((record) => record.isLocationQuery);
     if (!row) {
-      setMsgTitle('库位转移');
-      setMsgContent('请先通过物料号查询到库位结果后再进行库位转移。');
+      setMsgTitle(t('transferTitle'));
+      setMsgContent(t('transferQueryFirst'));
       setMsgOpen(true);
       return;
     }
@@ -273,15 +282,15 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
     const binTray = normalizeTrayId(String(bin || '').split('M')[0]);
 
     if (!transferForm.itemNo || !tray || !bin || !position.x || !position.y) {
-      setMsgTitle('库位转移');
-      setMsgContent('请输入有效的 Tray 和 Bin。');
+      setMsgTitle(t('transferTitle'));
+      setMsgContent(t('transferInvalidInput'));
       setMsgOpen(true);
       return;
     }
 
     if (binTray && binTray !== tray) {
-      setMsgTitle('库位转移');
-      setMsgContent('Bin 必须属于待转入的 Tray。');
+      setMsgTitle(t('transferTitle'));
+      setMsgContent(t('transferBinMismatch'));
       setMsgOpen(true);
       return;
     }
@@ -304,12 +313,12 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
       setRows(nextRows);
       setPagination((prev) => ({ ...prev, total: nextRows.length }));
       setShowTransferModal(false);
-      setMsgTitle('库位转移');
-      setMsgContent('库位转移已记录。');
+      setMsgTitle(t('transferTitle'));
+      setMsgContent(t('transferRecorded'));
       setMsgOpen(true);
     } catch (error) {
-      setMsgTitle('库位转移');
-      setMsgContent(error.response?.data?.detail || '库位转移失败。');
+      setMsgTitle(t('transferTitle'));
+      setMsgContent(error.response?.data?.detail || t('transferFailed'));
       setMsgOpen(true);
     } finally {
       setTransferLoading(false);
@@ -437,7 +446,7 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
         const activeToData = ordersByToNo[activeToNo];
         if (activeToData && activeToData.status !== 'completed') {
           setMsgTitle(t('errorTitle', { action: actionName }));
-          setMsgContent(`当前正在处理 TO [${activeToNo}] 的指令队列，且该 TO 尚未完全处理结束。\n系统不允许交叉操作。请等待 [${activeToNo}] 处理完毕，或点击队列右上角的 × 关闭队列后再操作其他的 TO。`);
+          setMsgContent(t('activeToBlocked', { activeToNo }));
           setIsConfirmingJob(false);
           setConfirmJobData(null);
           setMsgOpen(true);
@@ -667,6 +676,7 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
               onPaginationChange={setPagination}
               rowKey="id"
               theme={theme}
+              onRowClick={handleRowClick}
             />
           </div>
 
@@ -705,7 +715,7 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
             />
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500 font-bold">
-              正在准备视觉工作台...
+              {t('preparingVision')}
             </div>
           )}
         </div>
@@ -716,6 +726,7 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
         theme={theme}
         form={transferForm}
         loading={transferLoading}
+        t={t}
         onClose={() => setShowTransferModal(false)}
         onChange={setTransferForm}
         onConfirm={handleTransferConfirm}
@@ -727,6 +738,7 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
         message={isConfirmingJob && confirmJobData ? (
           <JobConfirmContent
             theme={theme}
+            t={t}
             actionName={confirmJobData.actionName}
             verbName={confirmJobData.verbName}
             bins={confirmJobData.bins}
@@ -752,8 +764,8 @@ export default function SapOrderPage({ locale = 'zh', theme = 'light' }) {
           setConfirmJobData(null);
           setExtraSelectedIds([]);
         }}
-        confirmText="确定"
-        cancelText="取消"
+        confirmText={t('confirm')}
+        cancelText={t('cancel')}
       />
 
       <ManualPickModal

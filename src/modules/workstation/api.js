@@ -3,7 +3,7 @@ import { WORKSTATION_API_URL } from '../../config/api';
 
 export function getWorkstationErrorMessage(error, fallback = 'Error') {
   return error?.response?.data?.detail
-    || (error?.code === 'ERR_NETWORK' ? '网络错误: 无法连接到视觉服务(8100端口)' : fallback);
+    || (error?.code === 'ERR_NETWORK' ? 'Vision service is unreachable.' : fallback);
 }
 
 export async function startVisionSession(payload) {

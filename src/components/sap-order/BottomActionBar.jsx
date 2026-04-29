@@ -30,7 +30,7 @@ export function BottomActionBar({
           {allSelected ? t('deselectAll') : t('selectAll')}
         </button>
         <div className={`text-base font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-          已选择: <span className="text-green-600 font-bold">{inboundSelectedCount}</span> 入库, <span className="text-indigo-600 font-bold">{outboundSelectedCount}</span> 出库
+          {t('selectedSummary', { inboundCount: inboundSelectedCount, outboundCount: outboundSelectedCount })}
         </div>
       </div>
 
@@ -44,7 +44,7 @@ export function BottomActionBar({
               : 'bg-amber-500 text-white hover:bg-amber-600'
           }`}
         >
-          库位转移
+          {t('transferAction')}
         </button>
         <button
           onClick={onInbound}

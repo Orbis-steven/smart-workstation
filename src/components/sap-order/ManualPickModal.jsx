@@ -27,10 +27,10 @@ export function ManualPickModal({
             </div>
             <div>
               <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-gray-100' : 'text-slate-800'}`}>
-                托盘已就位: {currentJob.bin}
+                {t('manualPickTitle', { tray: currentJob.bin })}
               </h2>
               <p className={`text-sm mt-0.5 ${theme === 'dark' ? 'text-gray-400' : 'text-slate-500'}`}>
-                请按照列表提示操作以下物料
+                {t('manualPickSubtitle')}
               </p>
             </div>
           </div>
@@ -61,7 +61,7 @@ export function ManualPickModal({
                     </div>
                     <div className="text-right shrink-0">
                       <div className={`text-2xl font-black ${item.jobType === 'inbound' ? 'text-green-600 dark:text-green-500' : 'text-indigo-600 dark:text-indigo-500'}`}>
-                        {item.qty} <span className="text-sm font-normal opacity-60">件</span>
+                        {item.qty} <span className="text-sm font-normal opacity-60">{t('pieces')}</span>
                       </div>
                       <div className={`text-xs font-medium uppercase mt-0.5 ${item.jobType === 'inbound' ? 'text-green-600/80 dark:text-green-500/80' : 'text-indigo-600/80 dark:text-indigo-500/80'}`}>
                         {item.jobType === 'inbound' ? t('inbound') : t('outbound')}
@@ -71,14 +71,14 @@ export function ManualPickModal({
 
                   <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-dashed dark:border-gray-700">
                     <div className="flex flex-col">
-                      <span className="text-xs text-slate-400 dark:text-gray-500 mb-0.5">Bin</span>
+                      <span className="text-xs text-slate-400 dark:text-gray-500 mb-0.5">{t('bin')}</span>
                       <span className={`font-mono text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-slate-700'} flex items-center gap-2`}>
                         {item.bin}
-                        {item.isRecommendedBin && <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 font-bold border border-blue-200 whitespace-nowrap">系统推荐</span>}
+                        {item.isRecommendedBin && <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 font-bold border border-blue-200 whitespace-nowrap">{t('recommendedBin')}</span>}
                       </span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xs text-slate-400 dark:text-gray-500 mb-0.5">坐标位置</span>
+                      <span className="text-xs text-slate-400 dark:text-gray-500 mb-0.5">{t('coordinatePosition')}</span>
                       <span className={`font-mono text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-slate-700'}`}>(X: {item.x}, Y: {item.y})</span>
                     </div>
                   </div>
@@ -94,7 +94,7 @@ export function ManualPickModal({
             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-lg text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
           >
             <CheckCircle className="w-6 h-6" />
-            完成操作并呼叫下一个托盘
+            {t('completeAndCallNextTray')}
           </button>
         </div>
       </div>
